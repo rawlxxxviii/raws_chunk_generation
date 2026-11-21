@@ -2,5 +2,7 @@
   "screen.raws_chunk_generation.generation_screen_title": "Chunk Generation",
   "key.categories.raws_chunk_generation": "Raw's Chunk Generation",
   "key.raws_chunk_generation.open_generation_screen": "Open Chunk Generation Screen",
-  "key.raws_chunk_generation.toggle_generation_hud": "Open Chunk Generation HUD"
+  "key.raws_chunk_generation.toggle_generation_hud": "Open Chunk Generation HUD",
+  "button.raws_chunk_generation.next_dimension": "Next Dimension",
+  "screen.raws_chunk_generation.dimension_non_existing_message": "Dimension does not exist yet (no chunks generated)"
 }
