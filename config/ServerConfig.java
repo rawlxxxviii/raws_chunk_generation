@@ -45,7 +45,7 @@ public class ServerConfig {
                 .define("operator_counts_as_online_player", true);
             GENERATION_BUFFER_RADIUS = builder.comment(
                 "Chunk (16 blocks) radius around online players to slowly pre-generate chunks.")
-                .defineInRange("generation_buffer_radius", 64, 0, 128);
+                .defineInRange("generation_buffer_radius", 100, 0, 256);
             ACTIVE_SERVER_GENERATION_BUFFER_SPEED = builder.comment(
                 "Maximum amount of chunks per second to generate for the online player buffer.",
                 "Set to 0.0 to disable the online buffer completely.")

@@ -86,6 +86,16 @@ public class ChunkMapRenderer {
             int bufferRadiusChunks = ServerConfig.INSTANCE.GENERATION_BUFFER_RADIUS.get();
             int radiusPx = Math.round(bufferRadiusChunks * scale);
             drawCircleOutline(graphics, playerPxX, playerPxY, radiusPx, minX, minY, mapSizePx, 0xFF00FF00);
+
+            // Vierkant stippellijntje voor de actieve Render Distance van de speler
+            int renderDistChunks = mc.options.getEffectiveRenderDistance();
+            int leftPx   = minX + Math.round((pPos.x - renderDistChunks - data.startChunkX) * scale);
+            int rightPx  = minX + Math.round((pPos.x + renderDistChunks + 1 - data.startChunkX) * scale);
+            int topPx    = minY + Math.round((pPos.z - renderDistChunks - data.startChunkZ) * scale);
+            int bottomPx = minY + Math.round((pPos.z + renderDistChunks + 1 - data.startChunkZ) * scale);
+
+            drawDashedRect(graphics, leftPx, topPx, rightPx, bottomPx, minX, minY, mapSizePx, 0xAAFFFFFF);
+
         }
     }
 
@@ -101,4 +111,20 @@ public class ChunkMapRenderer {
             }
         }
     }
+
+    private static void drawDashedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int minX, int minY, int size, int color) {
+        for (int x = x1; x <= x2; x += 3) {
+            if (x >= minX && x < minX + size) {
+                if (y1 >= minY && y1 < minY + size) graphics.fill(x, y1, Math.min(x + 2, minX + size), y1 + 1, color);
+                if (y2 >= minY && y2 < minY + size) graphics.fill(x, y2, Math.min(x + 2, minX + size), y2 + 1, color);
+            }
+        }
+        for (int y = y1; y <= y2; y += 3) {
+            if (y >= minY && y < minY + size) {
+                if (x1 >= minX && x1 < minX + size) graphics.fill(x1, y, x1 + 1, Math.min(y + 2, minY + size), color);
+                if (x2 >= minX && x2 < minX + size) graphics.fill(x2, y, x2 + 1, Math.min(y + 2, minY + size), color);
+            }
+        }
+    }
+
 }

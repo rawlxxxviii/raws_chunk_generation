@@ -45,7 +45,8 @@ public class GenerationScheduler {
             chunkBudget = 0.0;
             return;
         }
-        chunkBudget = Math.min(1.0, chunkBudget + (speedCps / 20.0));
+        double chunksPerTick = speedCps / 20.0;
+        chunkBudget = Math.min(Math.max(1.0, chunksPerTick), chunkBudget + chunksPerTick);
         while (chunkBudget >= 1.0 && ChunkTicketManager.getTotalActiveTickets() < maxTickets) {
             ChunkPos queued = tryQueueForNextPlayer(players, radius);
             if (queued != null) {
