@@ -12,7 +12,7 @@ public class ServerPlayerUtil {
         return !getEffectiveOnlinePlayers(server).isEmpty();
     }
 
-    private static List<ServerPlayer> getEffectiveOnlinePlayers(MinecraftServer server) {
+    public static List<ServerPlayer> getEffectiveOnlinePlayers(MinecraftServer server) {
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         if (ServerConfig.INSTANCE.OPERATOR_COUNTS_AS_ONLINE_PLAYER.get()) {
             return players;

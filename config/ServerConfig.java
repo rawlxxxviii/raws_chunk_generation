@@ -49,10 +49,10 @@ public class ServerConfig {
             ACTIVE_SERVER_GENERATION_BUFFER_SPEED = builder.comment(
                 "Maximum amount of chunks per second to generate for the online player buffer.",
                 "Set to 0.0 to disable the online buffer completely.")
-                .defineInRange("active_server_generation_buffer_speed", 0.5, 0.0, 20.0);
+                .defineInRange("active_server_generation_buffer_speed", 10.0, 0.0, 100.0);
             ACTIVE_SERVER_GENERATION_BUFFER_MAX_TICKETS = builder.comment(
                 "Maximum concurrent chunk tickets queued for the online player buffer.")
-                .defineInRange("active_server_generation_buffer_max_tickets", 2, 1, 10);
+                .defineInRange("active_server_generation_buffer_max_tickets", 6, 1, 20);
         builder.pop();
         builder.push("Inactive Server Generation");
             ACTIVATED_AREA_GENERATION_RADIUS = builder
