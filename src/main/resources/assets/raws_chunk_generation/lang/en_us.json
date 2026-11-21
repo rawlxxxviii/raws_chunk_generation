@@ -4,5 +4,9 @@
   "key.raws_chunk_generation.open_generation_screen": "Open Chunk Generation Screen",
   "key.raws_chunk_generation.toggle_generation_hud": "Open Chunk Generation HUD",
   "button.raws_chunk_generation.next_dimension": "Next Dimension",
-  "screen.raws_chunk_generation.dimension_non_existing_message": "Dimension does not exist yet (no chunks generated)"
+  "screen.raws_chunk_generation.dimension_non_existing_message": "Dimension %s does not exist yet",
+  "dimension.minecraft.overworld": "Overworld",
+  "dimension.minecraft.the_nether": "The Nether",
+  "dimension.minecraft.the_end": "The End"
+
 }
