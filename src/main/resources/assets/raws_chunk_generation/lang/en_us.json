@@ -7,6 +7,17 @@
   "screen.raws_chunk_generation.dimension_non_existing_message": "Dimension %s does not exist yet",
   "dimension.minecraft.overworld": "Overworld",
   "dimension.minecraft.the_nether": "The Nether",
-  "dimension.minecraft.the_end": "The End"
-
+  "dimension.minecraft.the_end": "The End",
+  "legend.raws_chunk_generation.generated": "Chunks Generated",
+  "legend.raws_chunk_generation.generated.desc": "Chunks already generated and saved on disk.",
+  "legend.raws_chunk_generation.queued": "Chunks Actively Generating",
+  "legend.raws_chunk_generation.queued.desc": "Chunks currently queued or being generated.",
+  "legend.raws_chunk_generation.player": "Players' Render Distance",
+  "legend.raws_chunk_generation.player.desc": "Your current position and active render distance.",
+  "legend.raws_chunk_generation.online_buffer": "Online Player Buffer",
+  "legend.raws_chunk_generation.online_buffer.desc": "Area slowly pre-generated around online players.",
+  "legend.raws_chunk_generation.activity_area": "Pre generation Marking",
+  "legend.raws_chunk_generation.activity_area.desc": "Recent player area queued for offline generation.",
+  "legend.raws_chunk_generation.activity_done": "Completed Area",
+  "legend.raws_chunk_generation.activity_done.desc": "Offline activity area that has been fully generated."
 }
