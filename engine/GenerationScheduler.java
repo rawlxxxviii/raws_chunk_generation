@@ -23,7 +23,7 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = RawsChunkGenerationMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class GenerationScheduler {
 
-    private static final int DIMENSION_ROTATION_TICKS = 20 * 60 * 60; // 1 uur per dimensie
+    private static final int DIMENSION_ROTATION_TICKS = 20 * 60 * 60;
 
     private static double chunkBudget = 0.0;
     private static int roundRobinPlayerIndex = 0;

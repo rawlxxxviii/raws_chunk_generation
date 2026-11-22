@@ -22,9 +22,7 @@ public class ActivitySavedData extends SavedData {
 
     private static final String DATA_NAME = "raws_chunk_generation_activity";
     private static final int MAX_POINTS_PER_PLAYER = 8;
-    private static final int MIN_DISTANCE_CHUNKS = 16;
 
-    // Speler UUID -> geordende lijst van max 8 ActivityPoints over alle dimensies samen (nieuwste op index 0)
     private final Map<UUID, List<ActivityPoint>> activityMap = new HashMap<>();
 
     public static ActivitySavedData get(MinecraftServer server) {
@@ -81,9 +79,9 @@ public class ActivitySavedData extends SavedData {
 
                 double dist = Math.hypot(candidate.x - point.pos.x, candidate.z - point.pos.z);
                 double normalizedDist = Math.min(1.0, dist / maxRadius);
-                double distFactor = 1.0 - (0.99 * normalizedDist); // 1.00 (midden) -> 0.01 (rand)
+                double distFactor = 1.0 - (0.99 * normalizedDist);
 
-                double ageFactor = 1.0 - (0.90 * (rank / (double) (MAX_POINTS_PER_PLAYER - 1))); // 1.00 -> 0.10
+                double ageFactor = 1.0 - (0.90 * (rank / (double) (MAX_POINTS_PER_PLAYER - 1)));
                 double score = distFactor * ageFactor;
 
                 if (score > bestScore) {

@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = RawsChunkGenerationMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class PlayerActivityTracker {
 
-    private static final int TRACK_INTERVAL_TICKS = 20 * 60 * 5; // Elke 5 minuten
+    private static final int TRACK_INTERVAL_TICKS = 20 * 60 * 5;
 
     private static void tryRecordPlayer(ServerPlayer player) {
         if (!ServerConfig.INSTANCE.OPERATORS_ACTIVATE_AREAS.get() && player.hasPermissions(2)) {
