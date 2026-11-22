@@ -97,6 +97,10 @@ public class GenerationScheduler {
     }
 
     private static void tickOfflineActivatedAreas(MinecraftServer server) {
+        if (server.getAverageTickTime() > 45.0f) {
+            return;
+        }
+
         int radius = ServerConfig.INSTANCE.ACTIVATED_AREA_GENERATION_RADIUS.get();
         double speedCps = ServerConfig.INSTANCE.INACTIVE_SERVER_GENERATION_BUFFER_SPEED.get();
         int maxTickets = ServerConfig.INSTANCE.INACTIVE_SERVER_GENERATION_BUFFER_MAX_TICKETS.get();
@@ -119,7 +123,6 @@ public class GenerationScheduler {
             return;
         }
 
-        // Kies of roteer na 1 uur naar de volgende dimensie met onafgewerkt werk
         if (currentOfflineDimension == null || !pendingDims.contains(currentOfflineDimension)) {
             currentOfflineDimension = pendingDims.get(0);
             offlineDimensionTicks = 0;
@@ -144,7 +147,6 @@ public class GenerationScheduler {
                 ChunkTicketManager.queueTicket(targetLevel, nextChunk);
                 chunkBudget -= 1.0;
             } else {
-                // Deze dimensie is nu helemaal afgerond; volgende tick schakelt hij direct door naar de volgende
                 currentOfflineDimension = null;
                 chunkBudget = 0.0;
                 break;

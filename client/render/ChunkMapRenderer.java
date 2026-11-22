@@ -11,7 +11,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.Color;
+
 public class ChunkMapRenderer {
+
+    public static final int GENERATED_COLOR          = new Color(0x555555).getRGB();
+    public static final int QUEUED_COLOR             = new Color(0x3388FF).getRGB();
+    public static final int PLAYER_COLOR             = new Color(0xFFFFFF).getRGB();
+    public static final int ONLINE_BUFFER_COLOR      = new Color(0x00FF00).getRGB();
+    public static final int ACTIVITY_AREA_COLOR      = new Color(0xFF9900).getRGB();
+    public static final int ACTIVITY_AREA_DONE_COLOR = new Color(0x27814B).getRGB();
 
     private static @Nullable SyncChunkAreaPacket latestPacket = null;
     private static @Nullable DynamicTexture mapTexture = null;
@@ -19,8 +28,16 @@ public class ChunkMapRenderer {
     private static int texWidth = 0;
     private static int texHeight = 0;
 
+    private static int toAbgr(int argb) {
+        int r = (argb >>> 16) & 0xFF;
+        int g = (argb >>> 8) & 0xFF;
+        int b = argb & 0xFF;
+        return 0xFF000000 | (b << 16) | (g << 8) | r;
+    }
+
     public static void updateData(SyncChunkAreaPacket packet) {
         latestPacket = packet;
+        if (!packet.dimensionExists || packet.width <= 0 || packet.height <= 0) return;
 
         if (mapTexture == null || texWidth != packet.width || texHeight != packet.height) {
             if (mapTexture != null) {
@@ -35,6 +52,9 @@ public class ChunkMapRenderer {
 
         NativeImage pixels = mapTexture.getPixels();
         if (pixels != null) {
+            int abgrGenerated = toAbgr(GENERATED_COLOR);
+            int abgrQueued = toAbgr(QUEUED_COLOR);
+
             int index = 0;
             for (int dz = 0; dz < packet.height; dz++) {
                 for (int dx = 0; dx < packet.width; dx++) {
@@ -45,8 +65,8 @@ public class ChunkMapRenderer {
                     }
 
                     int abgrColor = switch (state) {
-                        case 1 -> 0xFF555555;
-                        case 2 -> 0xFFFF8833;
+                        case 1 -> abgrGenerated;
+                        case 2 -> abgrQueued;
                         default -> 0xFF000000;
                     };
                     pixels.setPixelRGBA(dx, dz, abgrColor);
@@ -62,42 +82,14 @@ public class ChunkMapRenderer {
     }
 
     public static void renderMap(GuiGraphics graphics, int minX, int minY, int mapSizePx, boolean showActivityAreas) {
-        graphics.fill(minX - 1, minY - 1, minX + mapSizePx + 1, minY + mapSizePx + 1, 0xFF888888);
-        graphics.fill(minX, minY, minX + mapSizePx, minY + mapSizePx, 0xCC000000);
-
         SyncChunkAreaPacket data = latestPacket;
-        if (data == null || mapTextureLocation == null) return;
+        if (data == null || !data.dimensionExists || mapTextureLocation == null) return;
 
-        float scale = (float) mapSizePx / data.width;
-        graphics.blit(mapTextureLocation, minX, minY, mapSizePx, mapSizePx, 0, 0, data.width, data.height, data.width, data.height);
+        graphics.fill(minX - 1, minY - 1, minX + mapSizePx + 1, minY + mapSizePx + 1, 0xFF888888);
+        graphics.blit(mapTextureLocation, minX, minY, 0, 0, mapSizePx, mapSizePx, mapSizePx, mapSizePx);
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.level != null && mc.level.dimension().equals(data.dimension)) {
-            ChunkPos pPos = mc.player.chunkPosition();
-            float playerRelX = pPos.x - data.startChunkX + 0.5f;
-            float playerRelZ = pPos.z - data.startChunkZ + 0.5f;
-
-            int playerPxX = minX + Math.round(playerRelX * scale);
-            int playerPxY = minY + Math.round(playerRelZ * scale);
-
-            if (playerPxX >= minX && playerPxX < minX + mapSizePx && playerPxY >= minY && playerPxY < minY + mapSizePx) {
-                graphics.fill(playerPxX - 1, playerPxY - 1, playerPxX + 2, playerPxY + 2, 0xFFFFFFFF);
-            }
-
-            int bufferRadiusChunks = ServerConfig.INSTANCE.GENERATION_BUFFER_RADIUS.get();
-            int radiusPx = Math.round(bufferRadiusChunks * scale);
-            drawCircleOutline(graphics, playerPxX, playerPxY, radiusPx, minX, minY, mapSizePx, 0xFF00FF00);
-
-            // Vierkant stippellijntje voor de actieve Render Distance van de speler
-            int renderDistChunks = mc.options.getEffectiveRenderDistance();
-            int leftPx   = minX + Math.round((pPos.x - renderDistChunks - data.startChunkX) * scale);
-            int rightPx  = minX + Math.round((pPos.x + renderDistChunks + 1 - data.startChunkX) * scale);
-            int topPx    = minY + Math.round((pPos.z - renderDistChunks - data.startChunkZ) * scale);
-            int bottomPx = minY + Math.round((pPos.z + renderDistChunks + 1 - data.startChunkZ) * scale);
-
-            drawDashedRect(graphics, leftPx, topPx, rightPx, bottomPx, minX, minY, mapSizePx, 0xAAFFFFFF);
-
-        }
+        float scale = (float) mapSizePx / data.width;
 
         if (showActivityAreas && !data.activityPoints.isEmpty()) {
             int offlineRadius = ServerConfig.INSTANCE.ACTIVATED_AREA_GENERATION_RADIUS.get();
@@ -107,10 +99,9 @@ public class ChunkMapRenderer {
                 int ptPxX = minX + Math.round((point.pos().x - data.startChunkX + 0.5f) * scale);
                 int ptPxY = minY + Math.round((point.pos().z - data.startChunkZ + 0.5f) * scale);
 
-                // Nieuwste punten (rank 0) zijn fel oranje, oudere punten (rank 7) zijn zachter transparant
                 int alpha = point.completed() ? 0xCC : Math.max(0x44, 0xFF - (point.rank() * 24));
-                int rgb = point.completed() ? 0x00AAFF : 0xFF9900;
-                int color = (alpha << 24) | rgb;
+                int baseRgb = (point.completed() ? ACTIVITY_AREA_DONE_COLOR : ACTIVITY_AREA_COLOR) & 0x00FFFFFF;
+                int color = (alpha << 24) | baseRgb;
 
                 if (ptPxX >= minX && ptPxX < minX + mapSizePx && ptPxY >= minY && ptPxY < minY + mapSizePx) {
                     graphics.fill(ptPxX - 1, ptPxY - 1, ptPxX + 2, ptPxY + 2, color);
@@ -118,17 +109,27 @@ public class ChunkMapRenderer {
                 drawCircleOutline(graphics, ptPxX, ptPxY, offlineRadiusPx, minX, minY, mapSizePx, color);
             }
         }
-    }
 
-    private static void drawCircleOutline(GuiGraphics graphics, int cx, int cy, int radius, int minX, int minY, int size, int color) {
-        if (radius <= 0) return;
-        int steps = Math.max(64, radius * 4);
-        for (int i = 0; i < steps; i += 2) {
-            double angle = (2.0 * Math.PI * i) / steps;
-            int px = cx + (int) Math.round(Math.cos(angle) * radius);
-            int py = cy + (int) Math.round(Math.sin(angle) * radius);
-            if (px >= minX && px < minX + size && py >= minY && py < minY + size) {
-                graphics.fill(px, py, px + 1, py + 1, color);
+        if (mc.player != null && mc.level != null && mc.level.dimension().equals(data.dimension)) {
+            ChunkPos pPos = mc.player.chunkPosition();
+            int pPxX = minX + Math.round((pPos.x - data.startChunkX + 0.5f) * scale);
+            int pPxY = minY + Math.round((pPos.z - data.startChunkZ + 0.5f) * scale);
+
+            if (pPxX >= minX && pPxX < minX + mapSizePx && pPxY >= minY && pPxY < minY + mapSizePx) {
+                graphics.fill(pPxX - 1, pPxY - 1, pPxX + 2, pPxY + 2, PLAYER_COLOR);
+            }
+
+            int renderDistChunks = mc.options.getEffectiveRenderDistance();
+            int leftPx   = minX + Math.round((pPos.x - renderDistChunks - data.startChunkX) * scale);
+            int rightPx  = minX + Math.round((pPos.x + renderDistChunks + 1 - data.startChunkX) * scale);
+            int topPx    = minY + Math.round((pPos.z - renderDistChunks - data.startChunkZ) * scale);
+            int bottomPx = minY + Math.round((pPos.z + renderDistChunks + 1 - data.startChunkZ) * scale);
+            drawDashedRect(graphics, leftPx, topPx, rightPx, bottomPx, minX, minY, mapSizePx, 0xAAFFFFFF);
+
+            int bufferRadius = ServerConfig.INSTANCE.GENERATION_BUFFER_RADIUS.get();
+            if (bufferRadius > 0) {
+                int bufferRadiusPx = Math.round(bufferRadius * scale);
+                drawCircleOutline(graphics, pPxX, pPxY, bufferRadiusPx, minX, minY, mapSizePx, ONLINE_BUFFER_COLOR);
             }
         }
     }
@@ -148,4 +149,21 @@ public class ChunkMapRenderer {
         }
     }
 
+    private static void drawCircleOutline(GuiGraphics graphics, int cx, int cy, int radiusPx, int minX, int minY, int size, int color) {
+        if (radiusPx <= 0) return;
+        int steps = Math.max(60, radiusPx * 2);
+        for (int i = 0; i < steps; i++) {
+            if (i % 2 == 1) continue;
+            double angle = (2.0 * Math.PI * i) / steps;
+            int px = cx + (int) Math.round(Math.cos(angle) * radiusPx);
+            int py = cy + (int) Math.round(Math.sin(angle) * radiusPx);
+            if (px >= minX && px < minX + size && py >= minY && py < minY + size) {
+                graphics.fill(px, py, px + 1, py + 1, color);
+            }
+        }
+    }
+
+    public static void clear() {
+        latestPacket = null;
+    }
 }

@@ -35,9 +35,6 @@ public class ActivitySavedData extends SavedData {
         );
     }
 
-    /**
-     * Registreert een activiteitspunt voor een speler (pure FIFO-lijst van max 8 totaal, nieuwste vooraan).
-     */
     public void recordActivity(ResourceKey<Level> dim, UUID playerUuid, ChunkPos pos) {
         List<ActivityPoint> points = activityMap.computeIfAbsent(playerUuid, k -> new ArrayList<>());
 
@@ -49,10 +46,6 @@ public class ActivitySavedData extends SavedData {
         this.setDirty();
     }
 
-
-    /**
-     * Geeft alle activiteitspunten (inclusief hun leeftijd-rank 0..7) terug voor een specifieke dimensie.
-     */
     public List<RankedActivityPoint> getPointsForDimension(ResourceKey<Level> dim) {
         if (activityMap.isEmpty()) return List.of();
 
@@ -68,11 +61,6 @@ public class ActivitySavedData extends SavedData {
         return result;
     }
 
-    /**
-     * Kiest binnen een dimensie de volgende chunk op basis van onze gewogen score:
-     * - Afstand: 1.00 (midden) -> 0.01 (buitenrand)
-     * - Leeftijd (rank 0..7): 1.00 (nieuwste) -> 0.10 (oudste)
-     */
     public @Nullable ChunkPos findBestOfflineChunkInDimension(ResourceKey<Level> dim, int maxRadius) {
         if (maxRadius <= 0 || activityMap.isEmpty()) return null;
 
@@ -86,7 +74,6 @@ public class ActivitySavedData extends SavedData {
 
                 ChunkPos candidate = CircleChunkFinder.findNextChunkInCircle(dim, point.pos.x, point.pos.z, maxRadius);
                 if (candidate == null) {
-                    // Cirkel is 100% vol! Markeer direct als completed zodat hij niet meer gecheckt wordt
                     playerPoints.set(rank, new ActivityPoint(point.dimension, point.pos, true));
                     this.setDirty();
                     continue;
@@ -109,9 +96,6 @@ public class ActivitySavedData extends SavedData {
         return bestChunk;
     }
 
-    /**
-     * Geeft alle dimensies terug die momenteel nog onvoltooide activiteitspunten hebben.
-     */
     public Set<ResourceKey<Level>> getDimensionsWithPendingWork() {
         Set<ResourceKey<Level>> dims = new LinkedHashSet<>();
         for (List<ActivityPoint> playerPoints : activityMap.values()) {
@@ -123,8 +107,6 @@ public class ActivitySavedData extends SavedData {
         }
         return dims;
     }
-
-    // --- NBT OPSLAG ---
 
     @Override
     public CompoundTag save(CompoundTag root) {
