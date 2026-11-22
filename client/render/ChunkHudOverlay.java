@@ -78,6 +78,6 @@ public class ChunkHudOverlay {
         int minX = screenWidth - HUD_SIZE_PX - 10;
         int minY = 10;
 
-        ChunkMapRenderer.renderMap(graphics, minX, minY, HUD_SIZE_PX);
+        ChunkMapRenderer.renderMap(graphics, minX, minY, HUD_SIZE_PX, true);
     }
 }

@@ -90,7 +90,15 @@ public class ChunkVisualiserScreen extends Screen {
 
         return connection.levels().stream()
             .filter(ServerConfig::isDimensionEnabled)
-            .sorted(Comparator.comparing(k -> k.location().toString()))
+            .sorted(Comparator
+                .comparingInt((ResourceKey<Level> k) -> {
+                    if (k.equals(Level.OVERWORLD)) return 0;
+                    if (k.equals(Level.NETHER)) return 1;
+                    if (k.equals(Level.END)) return 2;
+                    return 3; // Alle modded dimensies netjes daarachter
+                })
+                .thenComparing(k -> k.location().toString())
+            )
             .toList();
     }
 
@@ -139,7 +147,7 @@ public class ChunkVisualiserScreen extends Screen {
             graphics.drawCenteredString(this.font, dimensionTitle, this.width / 2, minY + 12, 0xFFFFFFFF);
 
             if (data.dimensionExists) {
-                ChunkMapRenderer.renderMap(graphics, minX, minY, mapSizePx);
+                ChunkMapRenderer.renderMap(graphics, minX, minY, mapSizePx, true);
             } else {
                 graphics.fill(minX - 1, minY - 1, minX + mapSizePx + 1, minY + mapSizePx + 1, 0xFF888888);
                 graphics.fill(minX, minY, minX + mapSizePx, minY + mapSizePx, 0xFF000000);

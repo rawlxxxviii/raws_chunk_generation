@@ -1,6 +1,7 @@
 package com.gmail.rawlxxxviii.raws_chunk_generation.network.packet;
 
 import com.gmail.rawlxxxviii.raws_chunk_generation.config.ServerConfig;
+import com.gmail.rawlxxxviii.raws_chunk_generation.data.ActivitySavedData;
 import com.gmail.rawlxxxviii.raws_chunk_generation.network.PacketHandler;
 import com.gmail.rawlxxxviii.raws_chunk_generation.util.ChunkStateTracker;
 import net.minecraft.core.registries.Registries;
@@ -11,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public class RequestChunkAreaPacket {
@@ -72,12 +74,16 @@ public class RequestChunkAreaPacket {
                 ? ChunkStateTracker.getAreaStates(targetLevel, msg.startChunkX, msg.startChunkZ, safeWidth, safeHeight)
                 : new byte[0];
 
-            String debugInfo = String.format("%s | Generated chunks: %d", msg.dimension.location(), generatedCount);
+            List<ActivitySavedData.RankedActivityPoint> activityPoints = ActivitySavedData.get(sender.getServer())
+                .getPointsForDimension(msg.dimension);
+
+            String debugInfo = String.format("Generated chunks: %d | Activity areas: %d", generatedCount, activityPoints.size());
 
             PacketHandler.sendToPlayer(
-                new SyncChunkAreaPacket(msg.dimension, exists, msg.startChunkX, msg.startChunkZ, safeWidth, safeHeight, packedStates, debugInfo),
+                new SyncChunkAreaPacket(msg.dimension, exists, msg.startChunkX, msg.startChunkZ, safeWidth, safeHeight, packedStates, activityPoints, debugInfo),
                 sender
             );
+
         });
         ctx.setPacketHandled(true);
     }

@@ -19,7 +19,8 @@ public class ServerConfig {
     public static final ForgeConfigSpec SPEC;
     public static final ServerConfig INSTANCE;
 
-    public final ForgeConfigSpec.BooleanValue OPERATOR_COUNTS_AS_ONLINE_PLAYER;
+    public final ForgeConfigSpec.BooleanValue OPERATORS_ACTIVATE_SERVER;
+    public final ForgeConfigSpec.BooleanValue OPERATORS_ACTIVATE_AREAS;
     public final ForgeConfigSpec.IntValue GENERATION_BUFFER_RADIUS;
     public final ForgeConfigSpec.DoubleValue ACTIVE_SERVER_GENERATION_BUFFER_SPEED;
     public final ForgeConfigSpec.IntValue ACTIVE_SERVER_GENERATION_BUFFER_MAX_TICKETS;
@@ -38,11 +39,16 @@ public class ServerConfig {
     }
 
     private ServerConfig(ForgeConfigSpec.Builder builder) {
-        builder.push("Active Server Generation");
+        builder.push("Operators");
             builder.comment("Settings for when there are players online");
-            OPERATOR_COUNTS_AS_ONLINE_PLAYER = builder.comment(
+            OPERATORS_ACTIVATE_SERVER = builder.comment(
                 "Whether to include operator as a player when checking whether the server is active or inactive.")
-                .define("operator_counts_as_online_player", true);
+                .define("operators_activate_server", true);
+            OPERATORS_ACTIVATE_AREAS = builder.comment(
+                    "Whether operators will mark areas as activated for pre generation, just like players do.")
+                .define("operators_activate_areas", true);
+        builder.pop();
+        builder.push("Active Server Generation");
             GENERATION_BUFFER_RADIUS = builder.comment(
                 "Chunk (16 blocks) radius around online players to slowly pre-generate chunks.")
                 .defineInRange("generation_buffer_radius", 100, 0, 256);

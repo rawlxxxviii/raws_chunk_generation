@@ -1,6 +1,7 @@
 package com.gmail.rawlxxxviii.raws_chunk_generation.network.packet;
 
 import com.gmail.rawlxxxviii.raws_chunk_generation.client.network.ClientPacketHandler;
+import com.gmail.rawlxxxviii.raws_chunk_generation.data.ActivitySavedData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
@@ -9,6 +10,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public class SyncChunkAreaPacket {
@@ -20,9 +22,20 @@ public class SyncChunkAreaPacket {
     public final int width;
     public final int height;
     public final byte[] packedStates;
+    public final List<ActivitySavedData.RankedActivityPoint> activityPoints;
     public final String debugInfo;
 
-    public SyncChunkAreaPacket(ResourceKey<Level> dimension, boolean dimensionExists, int startChunkX, int startChunkZ, int width, int height, byte[] packedStates, String debugInfo) {
+    public SyncChunkAreaPacket(
+        ResourceKey<Level> dimension,
+        boolean dimensionExists,
+        int startChunkX,
+        int startChunkZ,
+        int width,
+        int height,
+        byte[] packedStates,
+        List<ActivitySavedData.RankedActivityPoint> activityPoints,
+        String debugInfo
+    ) {
         this.dimension = dimension;
         this.dimensionExists = dimensionExists;
         this.startChunkX = startChunkX;
@@ -30,6 +43,7 @@ public class SyncChunkAreaPacket {
         this.width = width;
         this.height = height;
         this.packedStates = packedStates;
+        this.activityPoints = activityPoints;
         this.debugInfo = debugInfo;
     }
 
@@ -41,6 +55,11 @@ public class SyncChunkAreaPacket {
         buf.writeInt(msg.width);
         buf.writeInt(msg.height);
         buf.writeByteArray(msg.packedStates);
+        buf.writeCollection(msg.activityPoints, (b, p) -> {
+            b.writeChunkPos(p.pos());
+            b.writeByte(p.rank());
+            b.writeBoolean(p.completed());
+        });
         buf.writeUtf(msg.debugInfo);
     }
 
@@ -53,6 +72,11 @@ public class SyncChunkAreaPacket {
             buf.readInt(),
             buf.readInt(),
             buf.readByteArray(),
+            buf.readList(b -> new ActivitySavedData.RankedActivityPoint(
+                b.readChunkPos(),
+                b.readByte(),
+                b.readBoolean()
+            )),
             buf.readUtf()
         );
     }

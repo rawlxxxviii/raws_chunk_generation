@@ -8,13 +8,9 @@ import java.util.List;
 
 public class ServerPlayerUtil {
 
-    public static boolean hasOnlinePlayers(MinecraftServer server) {
-        return !getEffectiveOnlinePlayers(server).isEmpty();
-    }
-
     public static List<ServerPlayer> getEffectiveOnlinePlayers(MinecraftServer server) {
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
-        if (ServerConfig.INSTANCE.OPERATOR_COUNTS_AS_ONLINE_PLAYER.get()) {
+        if (ServerConfig.INSTANCE.OPERATORS_ACTIVATE_SERVER.get()) {
             return players;
         }
         return players.stream()

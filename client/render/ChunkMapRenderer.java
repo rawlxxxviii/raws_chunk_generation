@@ -1,6 +1,7 @@
 package com.gmail.rawlxxxviii.raws_chunk_generation.client.render;
 
 import com.gmail.rawlxxxviii.raws_chunk_generation.config.ServerConfig;
+import com.gmail.rawlxxxviii.raws_chunk_generation.data.ActivitySavedData;
 import com.gmail.rawlxxxviii.raws_chunk_generation.network.packet.SyncChunkAreaPacket;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
@@ -60,7 +61,7 @@ public class ChunkMapRenderer {
         return latestPacket;
     }
 
-    public static void renderMap(GuiGraphics graphics, int minX, int minY, int mapSizePx) {
+    public static void renderMap(GuiGraphics graphics, int minX, int minY, int mapSizePx, boolean showActivityAreas) {
         graphics.fill(minX - 1, minY - 1, minX + mapSizePx + 1, minY + mapSizePx + 1, 0xFF888888);
         graphics.fill(minX, minY, minX + mapSizePx, minY + mapSizePx, 0xCC000000);
 
@@ -96,6 +97,26 @@ public class ChunkMapRenderer {
 
             drawDashedRect(graphics, leftPx, topPx, rightPx, bottomPx, minX, minY, mapSizePx, 0xAAFFFFFF);
 
+        }
+
+        if (showActivityAreas && !data.activityPoints.isEmpty()) {
+            int offlineRadius = ServerConfig.INSTANCE.ACTIVATED_AREA_GENERATION_RADIUS.get();
+            int offlineRadiusPx = Math.round(offlineRadius * scale);
+
+            for (ActivitySavedData.RankedActivityPoint point : data.activityPoints) {
+                int ptPxX = minX + Math.round((point.pos().x - data.startChunkX + 0.5f) * scale);
+                int ptPxY = minY + Math.round((point.pos().z - data.startChunkZ + 0.5f) * scale);
+
+                // Nieuwste punten (rank 0) zijn fel oranje, oudere punten (rank 7) zijn zachter transparant
+                int alpha = point.completed() ? 0xCC : Math.max(0x44, 0xFF - (point.rank() * 24));
+                int rgb = point.completed() ? 0x00AAFF : 0xFF9900;
+                int color = (alpha << 24) | rgb;
+
+                if (ptPxX >= minX && ptPxX < minX + mapSizePx && ptPxY >= minY && ptPxY < minY + mapSizePx) {
+                    graphics.fill(ptPxX - 1, ptPxY - 1, ptPxX + 2, ptPxY + 2, color);
+                }
+                drawCircleOutline(graphics, ptPxX, ptPxY, offlineRadiusPx, minX, minY, mapSizePx, color);
+            }
         }
     }
 
