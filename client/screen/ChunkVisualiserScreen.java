@@ -17,9 +17,9 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
-import java.awt.*;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 public class ChunkVisualiserScreen extends Screen {
 
@@ -41,6 +41,11 @@ public class ChunkVisualiserScreen extends Screen {
     private int panOffsetX = 0;
     private int panOffsetZ = 0;
     private int tickCounter = 0;
+
+    private @Nullable ResourceKey<Level> lastCpsDim = null;
+    private int lastGeneratedCount = -1;
+    private long lastCpsSampleMs = 0L;
+    private double smoothedCps = 0.0;
 
     public ChunkVisualiserScreen() {
         super(Component.translatable("screen.raws_chunk_generation.generation_screen_title"));
@@ -154,6 +159,8 @@ public class ChunkVisualiserScreen extends Screen {
         SyncChunkAreaPacket data = ChunkMapRenderer.getLatestPacket();
 
         if (data != null && data.dimension.equals(selectedDimension)) {
+            updateCps(data);
+
             if (data.dimensionExists) {
                 ChunkMapRenderer.renderMap(graphics, minX, minY, mapSizePx, true);
             } else {
@@ -170,7 +177,15 @@ public class ChunkVisualiserScreen extends Screen {
 
             Component dimensionTitle = Component.translatable(data.dimension.location().toLanguageKey("dimension"));
             graphics.drawCenteredString(this.font, dimensionTitle, this.width / 2, minY + 12, ChunkMapRenderer.PLAYER_COLOR);
-            graphics.drawCenteredString(this.font, data.debugInfo, this.width / 2, minY + mapSizePx + 8, 0xFFCCCCCC);
+
+            String formattedSpeed = String.format(Locale.ROOT, "%.1f", smoothedCps);
+            Component footerText = Component.translatable(
+                "screen.raws_chunk_generation.footer_stats",
+                data.totalGeneratedChunks,
+                formattedSpeed
+            );
+            graphics.drawCenteredString(this.font, footerText, this.width / 2, minY + mapSizePx + 8, 0xFFCCCCCC);
+
         } else {
             graphics.fill(minX - 1, minY - 1, minX + mapSizePx + 1, minY + mapSizePx + 1, 0xFF888888);
             graphics.fill(minX, minY, minX + mapSizePx, minY + mapSizePx, 0xFF000000);
@@ -183,22 +198,31 @@ public class ChunkVisualiserScreen extends Screen {
     }
 
     private void renderLegend(GuiGraphics graphics, int minX, int minY, int mapSizePx, int mouseX, int mouseY) {
-        int lineHeight = 12;
-        int startY = (minY + mapSizePx) - (LEGEND_ITEMS.size() * lineHeight);
-        int startX = minX >= 115 ? minX - 108 : 8;
+        float scale = 0.7f;
+        int lineHeight = 9;
+        int padding = 6;
+
+        int startX = minX + padding;
+        int startY = (minY + mapSizePx) - padding - (LEGEND_ITEMS.size() * lineHeight);
 
         for (int i = 0; i < LEGEND_ITEMS.size(); i++) {
             LegendItem item = LEGEND_ITEMS.get(i);
             int y = startY + (i * lineHeight);
 
-            graphics.fill(startX - 1, y + 1, startX + 7, y + 9, 0xFF888888);
-            graphics.fill(startX, y + 2, startX + 6, y + 8, item.color);
+            graphics.pose().pushPose();
+            graphics.pose().translate(startX, y, 0);
+            graphics.pose().scale(scale, scale, 1.0f);
+
+            graphics.fill(0, 1, 8, 9, 0xFF888888);
+            graphics.fill(1, 2, 7, 8, item.color);
 
             Component label = Component.translatable(item.labelKey);
-            graphics.drawString(this.font, label, startX + 10, y + 1, 0xFFDDDDDD);
+            graphics.drawString(this.font, label, 11, 1, 0xFFDDDDDD);
 
-            int hoverWidth = 10 + this.font.width(label);
-            if (mouseX >= startX - 2 && mouseX <= startX + hoverWidth + 2 && mouseY >= y && mouseY < y + lineHeight) {
+            graphics.pose().popPose();
+
+            int scaledWidth = Math.round((11 + this.font.width(label)) * scale);
+            if (mouseX >= startX - 2 && mouseX <= startX + scaledWidth + 2 && mouseY >= y && mouseY < y + lineHeight) {
                 graphics.renderTooltip(
                     this.font,
                     Component.translatable(item.tooltipKey),
@@ -237,6 +261,28 @@ public class ChunkVisualiserScreen extends Screen {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private void updateCps(SyncChunkAreaPacket data) {
+        int currentTotal = data.totalGeneratedChunks;
+        long now = System.currentTimeMillis();
+
+        if (lastCpsDim == null || !lastCpsDim.equals(data.dimension) || lastGeneratedCount < 0) {
+            lastCpsDim = data.dimension;
+            lastGeneratedCount = currentTotal;
+            lastCpsSampleMs = now;
+            smoothedCps = 0.0;
+        } else {
+            long elapsedMs = now - lastCpsSampleMs;
+            if (elapsedMs >= 1000L) {
+                int delta = Math.max(0, currentTotal - lastGeneratedCount);
+                double instantCps = (delta * 1000.0) / elapsedMs;
+                smoothedCps = (smoothedCps * 0.5) + (instantCps * 0.5);
+
+                lastGeneratedCount = currentTotal;
+                lastCpsSampleMs = now;
+            }
+        }
     }
 
     @Override

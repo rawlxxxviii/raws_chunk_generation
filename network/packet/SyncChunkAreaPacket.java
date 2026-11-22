@@ -23,7 +23,7 @@ public class SyncChunkAreaPacket {
     public final int height;
     public final byte[] packedStates;
     public final List<ActivitySavedData.RankedActivityPoint> activityPoints;
-    public final String debugInfo;
+    public final int totalGeneratedChunks;
 
     public SyncChunkAreaPacket(
         ResourceKey<Level> dimension,
@@ -34,7 +34,7 @@ public class SyncChunkAreaPacket {
         int height,
         byte[] packedStates,
         List<ActivitySavedData.RankedActivityPoint> activityPoints,
-        String debugInfo
+        int totalGeneratedChunks
     ) {
         this.dimension = dimension;
         this.dimensionExists = dimensionExists;
@@ -44,7 +44,7 @@ public class SyncChunkAreaPacket {
         this.height = height;
         this.packedStates = packedStates;
         this.activityPoints = activityPoints;
-        this.debugInfo = debugInfo;
+        this.totalGeneratedChunks = totalGeneratedChunks;
     }
 
     public static void encode(SyncChunkAreaPacket msg, FriendlyByteBuf buf) {
@@ -60,7 +60,7 @@ public class SyncChunkAreaPacket {
             b.writeByte(p.rank());
             b.writeBoolean(p.completed());
         });
-        buf.writeUtf(msg.debugInfo);
+        buf.writeInt(msg.totalGeneratedChunks);
     }
 
     public static SyncChunkAreaPacket decode(FriendlyByteBuf buf) {
@@ -77,7 +77,7 @@ public class SyncChunkAreaPacket {
                 b.readByte(),
                 b.readBoolean()
             )),
-            buf.readUtf()
+            buf.readInt()
         );
     }
 

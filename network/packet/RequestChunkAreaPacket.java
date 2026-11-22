@@ -77,13 +77,10 @@ public class RequestChunkAreaPacket {
             List<ActivitySavedData.RankedActivityPoint> activityPoints = ActivitySavedData.get(sender.getServer())
                 .getPointsForDimension(msg.dimension);
 
-            String debugInfo = String.format("Generated chunks: %d | Activity areas: %d", generatedCount, activityPoints.size());
-
             PacketHandler.sendToPlayer(
-                new SyncChunkAreaPacket(msg.dimension, exists, msg.startChunkX, msg.startChunkZ, safeWidth, safeHeight, packedStates, activityPoints, debugInfo),
+                new SyncChunkAreaPacket(msg.dimension, exists, msg.startChunkX, msg.startChunkZ, safeWidth, safeHeight, packedStates, activityPoints, generatedCount),
                 sender
             );
-
         });
         ctx.setPacketHandled(true);
     }
