@@ -16,11 +16,11 @@ import java.awt.Color;
 public class ChunkMapRenderer {
 
     public static final int GENERATED_COLOR          = new Color(0x555555).getRGB();
-    public static final int QUEUED_COLOR             = new Color(0x3388FF).getRGB();
+    public static final int QUEUED_COLOR             = new Color(0x3ADAFF).getRGB();
     public static final int PLAYER_COLOR             = new Color(0xFFFFFF).getRGB();
     public static final int ONLINE_BUFFER_COLOR      = new Color(0x00FF00).getRGB();
     public static final int ACTIVITY_AREA_COLOR      = new Color(0xFF9900).getRGB();
-    public static final int ACTIVITY_AREA_DONE_COLOR = new Color(0x27814B).getRGB();
+    public static final int ACTIVITY_AREA_DONE_COLOR = new Color(0x1783CF).getRGB();
 
     private static @Nullable SyncChunkAreaPacket latestPacket = null;
     private static @Nullable DynamicTexture mapTexture = null;
