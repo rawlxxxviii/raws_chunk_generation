@@ -20,5 +20,6 @@
   "legend.raws_chunk_generation.activity_area.desc": "Recent player area queued for offline generation.",
   "legend.raws_chunk_generation.activity_done": "Completed Area",
   "legend.raws_chunk_generation.activity_done.desc": "Offline activity area that has been fully generated.",
-  "screen.raws_chunk_generation.footer_stats": "Generated chunks: %s | Chunks per Second: %s"
+  "screen.raws_chunk_generation.footer_stats": "Generated chunks: %s | Chunks per Second: %s",
+  "button.raws_chunk_generation.go": "Go"
 }
