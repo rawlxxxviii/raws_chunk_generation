@@ -11,35 +11,34 @@ import net.minecraft.world.level.Level;
 import java.util.*;
 
 public class ChunkTicketManager {
-
-    // Ticket radius 1 => ticket level 32 (33 - 1), dwingt Minecraft om de chunk volledig tot ChunkStatus.FULL te genereren
     private static final int TICKET_RADIUS = 1;
+    private static final long TICKET_TIMEOUT_TICKS = 200L;
 
     private static final TicketType<ChunkPos> PREGEN_TICKET = TicketType.create(
         "raws_chunk_generation:pregen",
         Comparator.comparingLong(ChunkPos::toLong),
-        200
+        (int) TICKET_TIMEOUT_TICKS
     );
 
-    private static final Map<ResourceKey<Level>, Set<ChunkPos>> ACTIVE_TICKETS = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Map<ChunkPos, Long>> ACTIVE_TICKETS = new HashMap<>();
 
     public static int getTotalActiveTickets() {
         int count = 0;
-        for (Set<ChunkPos> set : ACTIVE_TICKETS.values()) {
-            count += set.size();
+        for (Map<ChunkPos, Long> map : ACTIVE_TICKETS.values()) {
+            count += map.size();
         }
         return count;
     }
 
     public static boolean isTicketActive(ResourceKey<Level> dim, ChunkPos pos) {
-        Set<ChunkPos> set = ACTIVE_TICKETS.get(dim);
-        return set != null && set.contains(pos);
+        Map<ChunkPos, Long> map = ACTIVE_TICKETS.get(dim);
+        return map != null && map.containsKey(pos);
     }
 
     public static void queueTicket(ServerLevel level, ChunkPos pos) {
         ResourceKey<Level> dim = level.dimension();
-        Set<ChunkPos> set = ACTIVE_TICKETS.computeIfAbsent(dim, k -> new HashSet<>());
-        if (set.add(pos)) {
+        Map<ChunkPos, Long> map = ACTIVE_TICKETS.computeIfAbsent(dim, k -> new HashMap<>());
+        if (map.putIfAbsent(pos, level.getGameTime()) == null) {
             level.getChunkSource().addRegionTicket(PREGEN_TICKET, pos, TICKET_RADIUS, pos);
         }
     }
@@ -47,11 +46,11 @@ public class ChunkTicketManager {
     public static void cleanupCompletedTickets(MinecraftServer server) {
         if (ACTIVE_TICKETS.isEmpty()) return;
 
-        Iterator<Map.Entry<ResourceKey<Level>, Set<ChunkPos>>> dimIt = ACTIVE_TICKETS.entrySet().iterator();
+        Iterator<Map.Entry<ResourceKey<Level>, Map<ChunkPos, Long>>> dimIt = ACTIVE_TICKETS.entrySet().iterator();
         while (dimIt.hasNext()) {
-            Map.Entry<ResourceKey<Level>, Set<ChunkPos>> entry = dimIt.next();
+            Map.Entry<ResourceKey<Level>, Map<ChunkPos, Long>> entry = dimIt.next();
             ResourceKey<Level> dim = entry.getKey();
-            Set<ChunkPos> tickets = entry.getValue();
+            Map<ChunkPos, Long> tickets = entry.getValue();
 
             ServerLevel level = server.getLevel(dim);
             if (level == null) {
@@ -59,10 +58,14 @@ public class ChunkTicketManager {
                 continue;
             }
 
-            Iterator<ChunkPos> posIt = tickets.iterator();
+            long now = level.getGameTime();
+            Iterator<Map.Entry<ChunkPos, Long>> posIt = tickets.entrySet().iterator();
             while (posIt.hasNext()) {
-                ChunkPos pos = posIt.next();
-                if (ChunkStateTracker.isGenerated(dim, pos)) {
+                Map.Entry<ChunkPos, Long> ticketEntry = posIt.next();
+                ChunkPos pos = ticketEntry.getKey();
+                boolean expired = (now - ticketEntry.getValue()) >= TICKET_TIMEOUT_TICKS;
+
+                if (ChunkStateTracker.isGenerated(dim, pos) || expired) {
                     level.getChunkSource().removeRegionTicket(PREGEN_TICKET, pos, TICKET_RADIUS, pos);
                     posIt.remove();
                 }
@@ -75,10 +78,10 @@ public class ChunkTicketManager {
     }
 
     public static void clearAllTickets(MinecraftServer server) {
-        for (Map.Entry<ResourceKey<Level>, Set<ChunkPos>> entry : ACTIVE_TICKETS.entrySet()) {
+        for (Map.Entry<ResourceKey<Level>, Map<ChunkPos, Long>> entry : ACTIVE_TICKETS.entrySet()) {
             ServerLevel level = server.getLevel(entry.getKey());
             if (level != null) {
-                for (ChunkPos pos : entry.getValue()) {
+                for (ChunkPos pos : entry.getValue().keySet()) {
                     level.getChunkSource().removeRegionTicket(PREGEN_TICKET, pos, TICKET_RADIUS, pos);
                 }
             }

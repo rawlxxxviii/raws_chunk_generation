@@ -45,7 +45,7 @@ public class ServerConfig {
                 "Whether operators mark the server as active. Using false here allows to check what happens in pre generation mode, when there are no other non-operators online.")
                 .define("operators_activate_server", true);
             OPERATORS_ACTIVATE_AREAS = builder.comment(
-                    "Whether operators will mark areas as activated for pre generation, just like players do.")
+                    "Whether operators will leave 'breadcrumbs', marking areas as activated for pre generation, just like normal players do.")
                 .define("operators_activate_areas", true);
         builder.pop();
         builder.push("Active Server Generation");
@@ -55,10 +55,10 @@ public class ServerConfig {
             ACTIVE_SERVER_GENERATION_BUFFER_SPEED = builder.comment(
                 "Maximum amount of chunks per second to generate for the online player buffer.",
                 "Set to 0.0 to disable the online buffer completely.")
-                .defineInRange("active_server_generation_buffer_speed", 10.0, 0.0, 100.0);
+                .defineInRange("active_server_generation_buffer_speed", 22.0, 0.0, 100.0);
             ACTIVE_SERVER_GENERATION_BUFFER_MAX_TICKETS = builder.comment(
                 "Maximum concurrent chunk tickets queued for the online player buffer.")
-                .defineInRange("active_server_generation_buffer_max_tickets", 6, 1, 20);
+                .defineInRange("active_server_generation_buffer_max_tickets", 4, 1, 20);
         builder.pop();
         builder.push("Inactive Server Generation");
             ACTIVATED_AREA_GENERATION_RADIUS = builder
