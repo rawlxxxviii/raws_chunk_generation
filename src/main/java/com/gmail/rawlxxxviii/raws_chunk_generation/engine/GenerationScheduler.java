@@ -33,9 +33,17 @@ public class GenerationScheduler {
 
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+        if (
+            event.phase != TickEvent.Phase.END
+        ) return;
 
         MinecraftServer server = event.getServer();
+        if (
+            !ServerConfig.isLoaded()
+            || server.getTickCount() < 100
+        ) {
+            return;
+        }
 
         ChunkTicketManager.cleanupCompletedTickets(server);
 

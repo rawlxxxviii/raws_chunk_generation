@@ -55,7 +55,7 @@ public class ServerConfig {
             ACTIVE_SERVER_GENERATION_BUFFER_SPEED = builder.comment(
                 "Maximum amount of chunks per second to generate for the online player buffer.",
                 "Set to 0.0 to disable the online buffer completely.")
-                .defineInRange("active_server_generation_buffer_speed", 22.0, 0.0, 100.0);
+                .defineInRange("active_server_generation_buffer_speed", 2.0, 0.0, 100.0);
             ACTIVE_SERVER_GENERATION_BUFFER_MAX_TICKETS = builder.comment(
                 "Maximum concurrent chunk tickets queued for the online player buffer.")
                 .defineInRange("active_server_generation_buffer_max_tickets", 4, 1, 20);
@@ -132,4 +132,9 @@ public class ServerConfig {
         return !blacklistedDimensions.contains(dimensionKey.location().getNamespace() + ":*")
             && !blacklistedDimensions.contains(dimensionKey.location().toString());
     }
+
+    public static boolean isLoaded() {
+        return SPEC.isLoaded();
+    }
+
 }

@@ -5,6 +5,7 @@ import com.gmail.rawlxxxviii.raws_chunk_generation.config.ServerConfig;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -15,8 +16,9 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -33,8 +35,21 @@ public class ChunkStateTracker {
     private static final Map<ResourceKey<Level>, LongSet> GENERATED_CHUNKS = new ConcurrentHashMap<>();
 
     public static boolean isGenerated(ResourceKey<Level> dim, int chunkX, int chunkZ) {
+        long packed = ChunkPos.asLong(chunkX, chunkZ);
         LongSet set = GENERATED_CHUNKS.get(dim);
-        return set != null && set.contains(ChunkPos.asLong(chunkX, chunkZ));
+        if (set != null && set.contains(packed)) {
+            return true;
+        }
+
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            ServerLevel level = server.getLevel(dim);
+            if (level != null && level.getChunkSource().getChunkNow(chunkX, chunkZ) != null) {
+                GENERATED_CHUNKS.computeIfAbsent(dim, k -> new LongOpenHashSet()).add(packed);
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isGenerated(ResourceKey<Level> dim, ChunkPos pos) {
@@ -48,7 +63,6 @@ public class ChunkStateTracker {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
-        GENERATED_CHUNKS.clear();
         for (ServerLevel level : event.getServer().getAllLevels()) {
             if (ServerConfig.isDimensionEnabled(level.dimension())) {
                 scanRegionFiles(level);
@@ -61,7 +75,7 @@ public class ChunkStateTracker {
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             if (event.getChunk() instanceof LevelChunk || event.getChunk().getStatus().isOrAfter(ChunkStatus.FULL)) {
                 ResourceKey<Level> dim = serverLevel.dimension();
-                if (!ServerConfig.isDimensionEnabled(dim)) return;
+                if (ServerConfig.isLoaded() && !ServerConfig.isDimensionEnabled(dim)) return;
 
                 GENERATED_CHUNKS
                     .computeIfAbsent(dim, k -> new LongOpenHashSet())
@@ -127,7 +141,7 @@ public class ChunkStateTracker {
 
     public static byte[] getAreaStates(ServerLevel level, int startChunkX, int startChunkZ, int width, int height) {
         ResourceKey<Level> dim = level.dimension();
-        LongSet genSet = GENERATED_CHUNKS.get(dim);
+        LongSet genSet = GENERATED_CHUNKS.computeIfAbsent(dim, k -> new LongOpenHashSet());
         var chunkSource = level.getChunkSource();
 
         int totalChunks = width * height;
@@ -138,12 +152,18 @@ public class ChunkStateTracker {
             int cz = startChunkZ + dz;
             for (int dx = 0; dx < width; dx++) {
                 int cx = startChunkX + dx;
+                long packed = ChunkPos.asLong(cx, cz);
 
                 byte state = 0;
-                if (genSet != null && genSet.contains(ChunkPos.asLong(cx, cz))) {
+                if (genSet.contains(packed)) {
                     state = 1;
-                } else if (chunkSource.hasChunk(cx, cz) && chunkSource.getChunkNow(cx, cz) == null) {
-                    state = 2;
+                } else if (chunkSource.hasChunk(cx, cz)) {
+                    if (chunkSource.getChunkNow(cx, cz) != null) {
+                        genSet.add(packed);
+                        state = 1;
+                    } else {
+                        state = 2;
+                    }
                 }
 
                 if (state != 0) {
